@@ -73,10 +73,13 @@ namespace Exceptionless.Api.Controllers {
         /// Create an issue on Jira from this exception
         /// </summary>
         /// <param name="id">The identifier of the stack.</param>
+        /// <param name="assignee">Assignee of the issue</param>
+        /// <param name="title">Title of the issue</param>
+        /// <param name="details">Details of the issue</param>
         /// <response code="404">The stack could not be found.</response>
         [HttpPost]
         [Route("{id:objectid}/create-jira-issue")]
-        public async Task<IHttpActionResult> CreateJiraIssue(string id) {
+        public async Task<IHttpActionResult> CreateJiraIssue(string id, string assignee, string title, string details) {
             var stack = await GetModelAsync(id);
             if (stack == null)
                 return NotFound();
@@ -87,8 +90,11 @@ namespace Exceptionless.Api.Controllers {
             var issue = _jiraClient.CreateIssue(ConfigurationManager.AppSettings["JiraProject"]);
             issue.Type = "Bug";
             //issue.Reporter = "Exceptionless";
-            issue.Summary = stack.Title;
-            issue.Description = $"{stack.Title}\r\n\r\nIssue created from: {stackUrl}";
+            if (!string.IsNullOrEmpty(assignee))
+                issue.Assignee = assignee;
+
+            issue.Summary = string.IsNullOrEmpty(title) ? stack.Title : title;
+            issue.Description = $"{(string.IsNullOrEmpty(details) ? "" : $"{details}---\r\n\r\n")}{stack.Title}\r\n\r\nIssue created from: {stackUrl}";
             await issue.SaveChangesAsync();
             await issue.SetLabelsAsync("Exceptionless");
 
