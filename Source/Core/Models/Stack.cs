@@ -96,6 +96,11 @@ namespace Exceptionless.Core.Models {
         public bool OccurrencesAreCritical { get; set; }
 
         /// <summary>
+        /// If true, the exception has been reported on jira
+        /// </summary>
+        public bool ReportedOnJira { get; set; }
+
+        /// <summary>
         /// A list of references.
         /// </summary>
         public ICollection<string> References { get; set; }

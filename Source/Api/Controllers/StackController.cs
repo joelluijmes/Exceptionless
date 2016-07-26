@@ -69,12 +69,19 @@ namespace Exceptionless.Api.Controllers {
 
         }
 
+        /// <summary>
+        /// Create an issue on Jira from this exception
+        /// </summary>
+        /// <param name="id">The identifier of the stack.</param>
+        /// <response code="404">The stack could not be found.</response>
         [HttpPost]
         [Route("{id:objectid}/create-jira-issue")]
         public async Task<IHttpActionResult> CreateJiraIssue(string id) {
             var stack = await GetModelAsync(id);
             if (stack == null)
                 return NotFound();
+            if (stack.ReportedOnJira)
+                return Ok("This issue has already be created on Jira");
 
             var stackUrl = $"{ConfigurationManager.AppSettings["BaseURL"]}/stack/{stack.Id}";
             var issue = _jiraClient.CreateIssue(ConfigurationManager.AppSettings["JiraProject"]);
@@ -84,6 +91,9 @@ namespace Exceptionless.Api.Controllers {
             issue.Description = $"{stack.Title}\r\n\r\nIssue created from: {stackUrl}";
             await issue.SaveChangesAsync();
             await issue.SetLabelsAsync("Exceptionless");
+
+            stack.ReportedOnJira = true;
+            await _stackRepository.SaveAsync(stack);
 
             return Ok();
         }
