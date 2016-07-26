@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web.Hosting;
 using System.Web.Http;
 using System.Web.Http.Description;
+using Atlassian.Jira;
 using AutoMapper;
 using Exceptionless.Api.Utility;
 using Exceptionless.Core.Authorization;
@@ -27,6 +30,7 @@ using Foundatio.Queues;
 using Foundatio.Repositories.Models;
 using McSherry.SemanticVersioning;
 using Newtonsoft.Json.Linq;
+using Project = Exceptionless.Core.Models.Project;
 
 namespace Exceptionless.Api.Controllers {
     [RoutePrefix(API_PREFIX + "/stacks")]
@@ -45,6 +49,7 @@ namespace Exceptionless.Api.Controllers {
         private readonly FormattingPluginManager _formattingPluginManager;
         private readonly List<FieldAggregation> _distinctUsersFields = new List<FieldAggregation> { new FieldAggregation { Field = "user.raw", Type = FieldAggregationType.Distinct } };
         private readonly List<FieldAggregation> _distinctUsersFieldsWithSort = new List<FieldAggregation> { new FieldAggregation { Field = "user.raw", Type = FieldAggregationType.Distinct, SortOrder = SortOrder.Descending } };
+        private readonly Jira _jiraClient;
 
         public StackController(IStackRepository stackRepository,  IOrganizationRepository organizationRepository, IProjectRepository projectRepository, IQueue<WorkItemData> workItemQueue, IWebHookRepository webHookRepository, WebHookDataPluginManager webHookDataPluginManager, IQueue<WebHookNotification> webHookNotificationQueue, ICacheClient cacheClient, EventStats eventStats, BillingManager billingManager, FormattingPluginManager formattingPluginManager, ILoggerFactory loggerFactory, IMapper mapper) : base(stackRepository, loggerFactory, mapper) {
             _stackRepository = stackRepository;
@@ -58,8 +63,29 @@ namespace Exceptionless.Api.Controllers {
             _eventStats = eventStats;
             _billingManager = billingManager;
             _formattingPluginManager = formattingPluginManager;
+            _jiraClient = Jira.CreateRestClient(ConfigurationManager.AppSettings["JiraURL"], ConfigurationManager.AppSettings["JiraUsername"], ConfigurationManager.AppSettings["JiraPassword"]);
 
             AllowedFields.AddRange(new[] { "first", "last" });
+
+        }
+
+        [HttpPost]
+        [Route("{id:objectid}/create-jira-issue")]
+        public async Task<IHttpActionResult> CreateJiraIssue(string id) {
+            var stack = await GetModelAsync(id);
+            if (stack == null)
+                return NotFound();
+
+            var stackUrl = $"{ConfigurationManager.AppSettings["BaseURL"]}/stack/{stack.Id}";
+            var issue = _jiraClient.CreateIssue(ConfigurationManager.AppSettings["JiraProject"]);
+            issue.Type = "Bug";
+            //issue.Reporter = "Exceptionless";
+            issue.Summary = stack.Title;
+            issue.Description = $"{stack.Title}\r\n\r\nIssue created from: {stackUrl}";
+            await issue.SaveChangesAsync();
+            await issue.SetLabelsAsync("Exceptionless");
+
+            return Ok();
         }
 
         /// <summary>

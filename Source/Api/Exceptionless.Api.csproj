@@ -46,6 +46,10 @@
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Atlassian.Jira, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Atlassian.SDK.8.3.0\lib\Atlassian.Jira.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="AutoMapper, Version=4.2.1.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
       <HintPath>..\..\packages\AutoMapper.4.2.1\lib\net45\AutoMapper.dll</HintPath>
       <Private>True</Private>
@@ -156,6 +160,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net" />
     <Reference Include="System.Net.Http" />
@@ -307,6 +312,10 @@
       <Project>{3e5b39d5-7acd-486b-9f90-59116b67952d}</Project>
       <Name>Exceptionless.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Insulation\Exceptionless.Insulation.csproj">
+      <Project>{75d9d89f-09f2-43a6-8b53-e1518e9fa822}</Project>
+      <Name>Exceptionless.Insulation</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="NLog.config">
@@ -315,6 +324,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\PublishProfiles\a.pubxml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
